@@ -1,4 +1,9 @@
-(ns todolist.actions)
+(ns todolist.actions
+  (:require [todolist.storage :refer [storage-get! storage-set!]]))
+
+(defn- save-state! [state]
+  (storage-set! "app-state" 
+    (assoc-in state [:next-todo] "")))
 
 (defn increment [state]
   (swap! state update-in [:count] inc))
@@ -6,7 +11,8 @@
 (defn add-todo! [state text]
   (let [todo {:text text :status :todo}]
     (swap! state update-in [:todos]
-      #(conj % todo))))
+      #(conj % todo))
+    (save-state! @state)))
 
 (defn- update-todo-status [status]
   (fn [state todo]
@@ -14,7 +20,8 @@
       #(map (fn [item]
         (if (= item todo)
           (assoc item :status status)
-          item)) %))))
+          item)) %))
+    (save-state! @state)))
 
 (def complete-todo! (update-todo-status :done))
 
@@ -27,4 +34,5 @@
 
 (defn remove-done! [state]
   (swap! state update-in [:todos]
-    #(filter is-done %)))
+    #(filter is-done %))
+  (save-state! @state))
